@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>멈춤지기 — 고속도로 멈춤 대피 안내</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="screen">
+
+  <!-- 차량 화면의 시스템 도크 (모양만) -->
+  <nav class="dock" aria-hidden="true">
+    <span class="dock-i"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></span>
+    <span class="dock-i"><svg viewBox="0 0 24 24"><path d="M12 3l7 17-7-4-7 4z"/></svg></span>
+    <span class="dock-i"><svg viewBox="0 0 24 24"><path d="M9 4v10.200A3 3 0 1 0 11 17V8h6V4z"/></svg></span>
+    <span class="dock-i"><svg viewBox="0 0 24 24"><path d="M7 3h3l1 5-2 1a11 11 0 0 0 6 6l1-2 5 1v3a2 2 0 0 1-2 2A16 16 0 0 1 5 5a2 2 0 0 1 2-2z"/></svg></span>
+    <span class="dock-i dock-on"><i class="mark"></i></span>
+    <span class="dock-sp"></span>
+    <span class="dock-i"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zm10 0h6v6h-6zM4 14h6v6H4zm10 0h6v6h-6z"/></svg></span>
+  </nav>
+
+  <main class="app" id="main" data-alarm="off">
+    <header class="bar">
+      <span class="bar-app"><i class="mark"></i>멈춤지기</span>
+      <span class="bar-phase" id="phase" data-level="idle"></span>
+      <span class="bar-nav" id="roadChip"></span>
+      <span class="bar-sp"></span>
+      <span class="bar-light" id="lightBadge" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0-3.500 10.900V16h7v-2.100A6 6 0 0 0 12 3zm-3 15h6v1.500a1.500 1.500 0 0 1-1.500 1.500h-3A1.500 1.500 0 0 1 9 19.500z"/></svg>
+        미등·안개등·실내등 켜짐
+      </span>
+      <span class="bar-speed" id="barSpeed"></span>
+      <span class="bar-clock" id="clock"></span>
+    </header>
+
+    <!-- 대기 화면 (주행 중) -->
+    <div class="standby" id="viewStandby">
+      <div class="standby-in">
+        <p class="standby-state" id="sbState"></p>
+        <p class="standby-sub" id="sbSub"></p>
+        <p class="standby-tell" id="sbTell" hidden></p>
+        <button class="btn standby-btn" id="manualBtn" data-demo="manual">대피 안내 시작 <small>“대피 안내”라고 말해도 돼요</small></button>
+      </div>
+    </div>
+
+    <!-- 대피 안내 화면 -->
+    <div class="body" id="viewEvac" hidden>
+      <section class="card seatcard">
+        <p class="eyebrow">좌석 · 차가 읽은 탑승자</p>
+        <h2 class="headline" id="seatHead"></h2>
+        <div class="car">
+          <span class="side side-l">주행 차로 쪽</span>
+          <span class="side side-r">가드레일 쪽</span>
+          <div class="car-front">차량 앞</div>
+          <div class="car-row car-row2" id="rowFront"></div>
+          <div class="car-row car-row3" id="rowRear"></div>
+          <i class="cdoor cdoor-fl" id="door-fl" data-open="false"></i>
+          <i class="cdoor cdoor-fr" id="door-fr" data-open="false"><b>문 열림</b></i>
+          <i class="cdoor cdoor-rl" id="door-rl" data-open="false"></i>
+          <i class="cdoor cdoor-rr" id="door-rr" data-open="false"><b>문 열림</b></i>
+        </div>
+        <div class="legend">
+          <span><i class="lg lg-empty"></i>빈자리</span>
+          <span><i class="lg lg-left"></i>아직 차 안</span>
+          <span><i class="lg lg-out"></i>내림</span>
+        </div>
+      </section>
+
+      <section class="col">
+        <div class="card voice" id="voice" data-level="idle">
+          <p class="eyebrow voice-tag">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zm12.500 3a4.500 4.500 0 0 0-2.500-4v8a4.500 4.500 0 0 0 2.500-4z"/></svg>
+            음성 안내
+          </p>
+          <p class="voice-text" id="voiceText"></p>
+        </div>
+
+        <div class="card lamps">
+          <p class="eyebrow">뒤차에 잘 보이도록 · 앱이 켠 등</p>
+          <div class="lamp-row">
+            <span class="lamp" id="lampTail" data-on="false">미등</span>
+            <span class="lamp" id="lampFog" data-on="false">후방 안개등</span>
+            <span class="lamp" id="lampCabin" data-on="false">실내등</span>
+            <span class="lamp lamp-manual">비상등 <small>직접 켜 주세요 · 앱이 켤 수 없어요</small></span>
+          </div>
+        </div>
+
+        <div class="card report" id="report">
+          <div class="report-head">
+            <p class="eyebrow">신고 문장 · 그대로 읽으세요</p>
+            <span class="sent" id="sent">휴대폰으로 보냈어요 · 한 번 눌러 견인 연결</span>
+          </div>
+          <p class="report-text" id="reportText"></p>
+          <div class="report-foot">
+            <span class="tel"><em>한국도로공사 긴급견인</em><b id="telTow"></b></span>
+            <span class="tel"><em>구조·구급</em><b>119</b></span>
+            <span class="report-note">견인 자동 접수는 제휴 후 열려요 · 위치는 예시</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="cta" id="endBtn" data-demo="end" hidden>안내 종료 <small>견인차가 도착했어요</small></button>
+        </div>
+      </section>
+    </div>
+
+    <!-- 기록 화면 -->
+    <div class="body body-rec" id="viewRecord" hidden>
+      <section class="card reccard">
+        <p class="eyebrow">멈춘 기록 · 보험 접수와 정비소 설명에 써요</p>
+        <h2 class="headline" id="recHead"></h2>
+        <div class="rec-facts" id="recFacts"></div>
+      </section>
+      <section class="card timeline">
+        <p class="eyebrow">시간순 · 차량 신호와 앱의 반응</p>
+        <ol class="tl" id="tl"></ol>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- 시연용 가상 차량 신호 띠 — 앱 화면이 아니라 시연 장치다 -->
+<footer class="foot">
+  <span class="fixture-badge" id="fixtureBadge" hidden></span>
+  <span class="chip" id="chSpeed"><em>속도</em><b id="hudSpeed"></b></span>
+  <span class="chip" id="chTell"><em>경고등</em><b id="hudTell"></b></span>
+  <span class="chip" id="chDoor"><em>도어</em><b id="hudDoor"></b></span>
+  <span class="chip" id="chOcc"><em>좌석 점유</em><b id="hudOcc"></b></span>
+  <span class="chip chip-out" id="chLight"><em>앱→차 등화</em><b id="outLight" data-on="false"></b></span>
+  <ul class="hud-log" id="log"></ul>
+  <span id="footNote" hidden></span>
+  <button class="demo-btn" id="demoBtn" hidden>▶ 시연 재생</button>
+
+  <!-- 눈에 안 보이는 신호 입력 (녹화 스크립트가 누른다) -->
+  <div class="ctl" id="ctl">
+    <button data-demo="drive" id="driveBtn"></button>
+    <button data-demo="fault" id="faultBtn"></button>
+    <button data-demo="stop" id="stopBtn"></button>
+    <button data-demo="door-fl" data-door="fl"></button>
+    <button data-demo="door-fr" data-door="fr"></button>
+    <button data-demo="door-rl" data-door="rl"></button>
+    <button data-demo="door-rr" data-door="rr"></button>
+    <button data-demo="occ-0" data-occ="0"></button>
+    <button data-demo="occ-1" data-occ="1"></button>
+    <button data-demo="occ-2" data-occ="2"></button>
+    <button data-demo="occ-3" data-occ="3"></button>
+    <button data-demo="occ-4" data-occ="4"></button>
+    <button data-demo="outro" id="outroBtn"></button>
+  </div>
+</footer>
+
+<!-- 소개 -->
+<div class="overlay" id="intro">
+  <div class="splash">
+    <i class="mark mark-xl"></i>
+    <h2>멈춤지기</h2>
+    <p class="splash-lead">고속도로에서 차가 멈춘 순간,<br>차가 먼저 말하고 <b>전원이 내렸는지</b> 좌석으로 확인해요.</p>
+    <p class="splash-sub">고속도로 장거리에서 차가 멈추는 순간을 곁에서 챙기는 차량용 앱</p>
+    <p class="splash-note" id="introNote">차량 화면에서 도는 앱의 모습을 <b>목업</b>으로 만들어 녹화했어요. 실제 차량·SDK 연동 화면이 아니에요.</p>
+    <button class="cta cta-inline" data-demo="intro-go" id="introGo">시연 보기</button>
+  </div>
+</div>
+
+<!-- 요약 -->
+<div class="overlay" id="outro" hidden>
+  <div class="splash splash-wide">
+    <h2>멈춤지기</h2>
+    <ul class="points">
+      <li>발견되기 전에, <b>차 안에서 먼저</b> 말해요 <span>경고등·정차·에어백 신호로 시작하고, 버튼과 음성으로도 시작해요</span></li>
+      <li><b>누가 아직 차 안에 있는지</b> 좌석으로 짚어요 <span>전 좌석이 비고 문이 닫힐 때까지, 미등·후방 안개등·실내등을 켠 채로</span></li>
+      <li><b>신고 문장</b>을 만들어 <b>견인 요청</b>까지 이어요 <span>한 번 눌러 긴급견인에 연결해요 · 제휴가 되면 자동으로 접수해요</span></li>
+    </ul>
+    <p class="splash-note">목업 화면이에요. 실제 앱은 Pleos Connect Vehicle SDK의 좌석·도어·경고등·등화 신호로 같은 판정을 하도록 설계했어요.</p>
+  </div>
+</div>
+
+<div id="tap" aria-hidden="true"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
